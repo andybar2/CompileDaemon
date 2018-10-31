@@ -112,7 +112,8 @@ var (
 	flag_command         = flag.String("command", "", "Command to run and restart after build")
 	flag_command_stop    = flag.Bool("command-stop", false, "Stop command before building")
 	flag_recursive       = flag.Bool("recursive", true, "Watch all dirs. recursively")
-	flag_build           = flag.String("build", "go build", "Command to rebuild after changes")
+	flag_build_cmd       = flag.String("build-cmd", "go build", "Command to rebuild after changes")
+	flag_build_env       = flag.String("build-env", "", "Environment variables for the build command")
 	flag_build_dir       = flag.String("build-dir", "", "Directory to run build command in.  Defaults to directory")
 	flag_color           = flag.Bool("color", false, "Colorize output for CompileDaemon status messages")
 	flag_logprefix       = flag.Bool("log-prefix", true, "Print log timestamps and subprocess stderr/stdout output")
@@ -144,15 +145,17 @@ func failColor(format string, args ...interface{}) string {
 
 // Run `go build` and print the output if something's gone wrong.
 func build() bool {
-	log.Println(okColor("Running build command!"))
+	log.Println(okColor("Running build command! andy"))
 
-	args := strings.Split(*flag_build, " ")
-	if len(args) == 0 {
-		// If the user has specified and empty then we are done.
+	buildCmd := *flag_build_cmd
+	buildEnv := *flag_build_env
+
+	if buildCmd == "" {
+		// If the user has specified an empty build command, then we are done.
 		return true
 	}
 
-	cmd := exec.Command(args[0], args[1:]...)
+	cmd := exec.Command("sh", "-c", buildCmd)
 
 	if *flag_build_dir != "" {
 		cmd.Dir = *flag_build_dir
@@ -160,12 +163,18 @@ func build() bool {
 		cmd.Dir = *flag_directory
 	}
 
+	envVars := strings.Split(buildEnv, " ")
+
+	if len(envVars) > 0 {
+		cmd.Env = append(os.Environ(), envVars...)
+	}
+
 	output, err := cmd.CombinedOutput()
 
 	if err == nil {
 		log.Println(okColor("Build ok."))
 	} else {
-		log.Println(failColor("Error while building:\n"), failColor(string(output)))
+		log.Println(failColor("Error while building:\n"), failColor(err.Error()), failColor(string(output)))
 	}
 
 	return err == nil
