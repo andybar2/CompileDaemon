@@ -145,7 +145,7 @@ func failColor(format string, args ...interface{}) string {
 
 // Run `go build` and print the output if something's gone wrong.
 func build() bool {
-	log.Println(okColor("Running build command! andy"))
+	log.Println(okColor("Running build command!"))
 
 	buildCmd := *flag_build_cmd
 	buildEnv := *flag_build_env
